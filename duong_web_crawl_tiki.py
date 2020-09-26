@@ -136,7 +136,7 @@ def get_data(item_html, output_dict):
     return d
 
 try:
-    df_output = pd.read_csv('tiki_tv_product.csv')
+    df_output = pd.read_excel('tiki_tv_product.xlsx')
 except:
     df_output = pd.DataFrame()
 
@@ -198,7 +198,7 @@ while number_of_product > 0:
             df_output = df
 
         # save to excel file after every page finish crawling
-        df_output.to_csv('tiki_tv_product.csv', index=False)
+        df_output.to_excel('tiki_tv_product.xlsx', index=False)
 
         finish_time = time.strftime('%Y-%m-%d %H:%M:%S')
         print(f'Finish crawling page {page_number} at {finish_time}')
