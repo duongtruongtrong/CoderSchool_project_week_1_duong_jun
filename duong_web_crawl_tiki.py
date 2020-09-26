@@ -2,23 +2,25 @@ import requests
 
 from bs4 import BeautifulSoup
 
-data_col = ['data-seller-product-id',
-'product-sku',
-'data-title',
-'data-price',
-'data-id',
-'data-brand',
-'data-category',
-'product_link',
-'product_image',
-'price-regular',
-'sale-tag sale-tag-square',
-'rating_percentage',
-'number_of_reviews']
+import pandas as pd
 
-output_dict = {}
-for col in data_col:
-    output_dict[col] = []
+import time
+
+import random
+
+data_col = {'data-seller-product-id':'product_id',
+'product-sku':'product_sku',
+'data-title':'product_name',
+'data-price':'current_price',
+'data-id':'data_id',
+'data-brand':'product_brand',
+'data-category':"category",
+'product_link':'product_link',
+'product_image':'product_image_link',
+'price-regular':'original_price',
+'sale-tag sale-tag-square':'discount_pct',
+'rating_percentage':'rating_pct',
+'number_of_reviews':'number_of_reviews'}
 
 data_col_dict = {'general_info': ['data-seller-product-id',
 'product-sku',
@@ -74,57 +76,124 @@ def get_data(item_html, output_dict):
     """Get data from item_list HTML for selected data_col list.
     Return a dictionary.
 
+    If can't crawl the data, give None value.
+    Reasons for can not crawl data:
+        - No such tag/attribut: No review
+
     get_data(item_html)
     item_html: HTML of each item in item_list, type: string
     """
 
     # dictionary with keys and values are list
     d = output_dict
+
+    # if can't crawl the data, give None value.
+    # Reason for can not crawl data:
+    #     - No such tag/attribut: No review
+
     # get general_info
     for i in data_col_dict['general_info']:
-        d[i].append(item_html[i])
+        try:
+            d[i].append(item_html[i])
+        except:
+            d[i].append(None)
     
     # get links
-    d['product_link'].append(item_html.a['href'])
-    d['product_image'].append(item_html.a.img['src'])
+    try:
+        d['product_link'].append(item_html.a['href'])
+    except:
+        d['product_link'].append(None)
+
+    try:
+        d['product_image'].append(item_html.a.img['src'])
+    except:
+        d['product_image'].append(None)
 
     # get price
     for i in data_col_dict['price']:
-        d[i].append(item_html.find('span', {'class':i}).text)
+        try:
+            d[i].append(item_html.find('span', {'class':i}).text)
+        except:
+            d[i].append(None)
     
     # get rating_percentage
-    rating_section = item_html.find('div', {'class':'review-wrap'})
-
-    d['number_of_reviews'].append(rating_section.find('p', {'class':'review'}).text)
+    try:
+        rating_section = item_html.find('div', {'class':'review-wrap'})
+    
+        d['number_of_reviews'].append(rating_section.find('p', {'class':'review'}).text)
+    except:
+        d['number_of_reviews'].append(None)
 
     # getting to rating_percentage
-    p_rating = rating_section.find('p', {'class':'rating'})
-    span_rating = p_rating.find('span', {'class':'rating-content'})
-
-    d['rating_percentage'].append(span_rating.span['style'])
+    try:
+        p_rating = rating_section.find('p', {'class':'rating'})
+        span_rating = p_rating.find('span', {'class':'rating-content'})
+        
+        d['rating_percentage'].append(span_rating.span['style'])
+    except:
+        d['rating_percentage'].append(None)
 
     return d
 
+try:
+    df_output = pd.read_excel('/result/tiki_tv_product.xlsx')
+except:
+    df_output = pd.DataFrame()
 
+number_of_product = 1
+
+# start with 1 | start with the previous page + 1
+page_number = 1
+
+# tiki link without page number
+tiki_link = 'https://tiki.vn/tivi/c5015?src=c.5015.hamburger_menu_fly_out_banner&page='
+
+while number_of_product > 0:
     
+    # get HTML from tiki_link + page_number
+    # f'https://tiki.vn/tivi/c5015?src=c.5015.hamburger_menu_fly_out_banner&page={page_number}'
+    full_html = get_html(tiki_link + str(page_number))
 
-tiki_link = 'https://tiki.vn/tivi/c5015?src=c.5015.hamburger_menu_fly_out_banner&page=1'
+    # initiate output_dict to store the page result
+    output_dict = {}
+    for col in data_col:
+        output_dict[col] = []
 
-# get_item_list(get_html(tiki_link))[0]
-for item_html in get_item_list(get_html(tiki_link))[:2]:
-    output_dict = get_data(item_html, output_dict)
+    # get all the data
+    for item_html in get_item_list(full_html):
+        output_dict = get_data(item_html, output_dict)
+    
+    # output df
+    df = pd.DataFrame(data = output_dict, columns = output_dict.keys())
+    df['page'] = page_number
 
-print(output_dict)
+    # merge/concat with the last df output df_output
+    if len(df_output) != 0:
+        df_output = pd.concat([df_output, df], sort=False)
+    else:
+        df_output = df
+
+    # save to excel file after every page finish crawling
+    df_output.to_csv('tiki_tv_product.csv', index=False)
+
+    finish_time = time.strftime('%Y-%m-%d %H:%M:%S')
+    print(f'Finish crawling page {page_number} at {finish_time}')
+
+    page_number+=1
+
+    time.sleep(random.randint(2, 4))
+
+
+
+# # get_item_list(get_html(tiki_link))[0]
+# for item_html in get_item_list(get_html(tiki_link))[:2]:
+#     output_dict = get_data(item_html, output_dict)
+
+
+
+
+
+# print(output_dict)
 
 # help(get_html)
 # help(get_item_list)
-
-# number_of_product = 1
-
-# while number_of_product > 0:
-#     # Tiki - Tivi category
-#     r = requests.get('https://tiki.vn/tivi/c5015?src=c.5015.hamburger_menu_fly_out_banner&page=1')
-
-#     soup = r
-
-#     stop at page that does not contain any product
