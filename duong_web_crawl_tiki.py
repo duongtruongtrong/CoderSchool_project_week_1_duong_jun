@@ -114,7 +114,7 @@ def get_data(item_html, output_dict):
         try:
             d[i].append(item_html.find('span', {'class':i}).text)
         except:
-            d[i].append(None)
+            d[i].append('0')
     
     # get rating_percentage
     try:
@@ -122,7 +122,7 @@ def get_data(item_html, output_dict):
     
         d['number_of_reviews'].append(rating_section.find('p', {'class':'review'}).text)
     except:
-        d['number_of_reviews'].append(None)
+        d['number_of_reviews'].append('0')
 
     # getting to rating_percentage
     try:
@@ -131,19 +131,23 @@ def get_data(item_html, output_dict):
         
         d['rating_percentage'].append(span_rating.span['style'])
     except:
-        d['rating_percentage'].append(None)
+        d['rating_percentage'].append('0')
 
     return d
 
 try:
-    df_output = pd.read_excel('/result/tiki_tv_product.xlsx')
+    df_output = pd.read_csv('tiki_tv_product.csv')
 except:
     df_output = pd.DataFrame()
 
 number_of_product = 1
 
 # start with 1 | start with the previous page + 1
-page_number = 1
+if len(df_output) == 0:
+    page_number = 1
+else:
+    # start the next page from the last page in df_output
+    page_number = df_output['page'].max() + 1
 
 # tiki link without page number
 tiki_link = 'https://tiki.vn/tivi/c5015?src=c.5015.hamburger_menu_fly_out_banner&page='
@@ -154,46 +158,55 @@ while number_of_product > 0:
     # f'https://tiki.vn/tivi/c5015?src=c.5015.hamburger_menu_fly_out_banner&page={page_number}'
     full_html = get_html(tiki_link + str(page_number))
 
-    # initiate output_dict to store the page result
-    output_dict = {}
-    for col in data_col:
-        output_dict[col] = []
+    # get item list from full_html
+    item_list = get_item_list(full_html)
+    number_of_product = len(item_list)
 
-    # get all the data
-    for item_html in get_item_list(full_html):
-        output_dict = get_data(item_html, output_dict)
-    
-    # output df
-    df = pd.DataFrame(data = output_dict, columns = output_dict.keys())
-    df['page'] = page_number
+    # if there is not produc in item list, it means it reach the last page.
+    if number_of_product > 0:
 
-    # merge/concat with the last df output df_output
-    if len(df_output) != 0:
-        df_output = pd.concat([df_output, df], sort=False)
-    else:
-        df_output = df
+        # initiate output_dict to store the page result
+        output_dict = {}
+        for col in data_col:
+            output_dict[col] = []
 
-    # save to excel file after every page finish crawling
-    df_output.to_csv('tiki_tv_product.csv', index=False)
+        # get all the data
+        for item_html in item_list:
+            output_dict = get_data(item_html, output_dict)
+        
+        # output df
+        df = pd.DataFrame(data = output_dict, columns = output_dict.keys())
+        df['page'] = page_number
 
-    finish_time = time.strftime('%Y-%m-%d %H:%M:%S')
-    print(f'Finish crawling page {page_number} at {finish_time}')
+        # cleaning df
+        df['price-regular'] = df['price-regular'].str.replace(r'\.|đ', '').astype(int)
+        
+        df['product_link'] = 'https://tiki.vn/'+ df['product_link']
+
+        df['rating_percentage'] = df['rating_percentage'].str.replace(r'width:|%', '').astype(float)
+
+        df['number_of_reviews'] = df['number_of_reviews'].str.replace(r'\(| nhận xét\)', '').astype(int)
+
+        df['sale-tag sale-tag-square'] = df['sale-tag sale-tag-square'].str.replace(r'-|%', '').astype(float)
+
+        df.rename(columns=data_col, inplace=True)
+
+        # merge/concat with the last df output df_output
+        if len(df_output) != 0:
+            df_output = pd.concat([df_output, df], sort=False)
+        else:
+            df_output = df
+
+        # save to excel file after every page finish crawling
+        df_output.to_csv('tiki_tv_product.csv', index=False)
+
+        finish_time = time.strftime('%Y-%m-%d %H:%M:%S')
+        print(f'Finish crawling page {page_number} at {finish_time}')
 
     page_number+=1
 
     time.sleep(random.randint(2, 4))
 
+print('Finish crawling!')
 
-
-# # get_item_list(get_html(tiki_link))[0]
-# for item_html in get_item_list(get_html(tiki_link))[:2]:
-#     output_dict = get_data(item_html, output_dict)
-
-
-
-
-
-# print(output_dict)
-
-# help(get_html)
-# help(get_item_list)
+print(df_output.info())
