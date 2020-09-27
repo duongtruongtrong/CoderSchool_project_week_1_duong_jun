@@ -14,8 +14,8 @@
 ## Files:
 1. data_columns.xlsx: Data need to crawl from Tiki webpage.
 2. web_crawl_tiki.py: Get data of 1 item in page 1 (Step 1).
-3. duong_web_crawl_tiki.py: Test loops.
-4. week_1_duong_jun_craw_tiki_category.py: Loop step 1 and step 2 to get final result as .xlsx file.
+3. duong_web_crawl_tiki.py: Test loops with step 1 and step 2.
+4. week_1_duong_jun_craw_tiki_category.py: Complete script with final result as .xlsx file.
 5. tiki_tv_product.xlsx, tiki_tv_product.csv: Final result files.
 
 ## Python Code and Tips:
