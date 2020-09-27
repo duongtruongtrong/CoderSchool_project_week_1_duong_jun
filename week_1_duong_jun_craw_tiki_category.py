@@ -1,14 +1,14 @@
 """
 Crawling data of all Tiki product in TV category.
 
-Overal Logic:
+Overall  Logic:
 Step 1: Crawl data of 1 item in page 1.
 Step 2: Loop step 1 to get all items in page 1.
 Step 3: Loop step 2 for all pages in Tiki category until the final page.
 
-Extra feauture:
-1. Continue the page where the script left off. Crawling process can be interupted due to random causes.
-2. Extend an excel (.xlsx) file with crawled data of every page.
+Extra Features:
+1. Extend an excel (.xlsx) file with crawled data of every page.
+2. Continue the page where the script left off. Crawling process can be interrupted due to random causes.
 """
 
 
@@ -105,7 +105,7 @@ def get_data(item_html, output_dict):
 
     # if can't crawl the data, give None value.
     # Reason for can not crawl data:
-    #     - No such tag/attribut: No review
+    #     - No such tag/attribute: No review
 
     # get general_info
     for i in data_col_dict['general_info']:
