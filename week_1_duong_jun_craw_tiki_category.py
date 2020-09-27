@@ -207,6 +207,9 @@ while number_of_product > 0:
 
         df.rename(columns=data_col, inplace=True)
 
+        for _ in ['product_id', 'product_sku', 'current_price', 'data_id']:
+            df[_] = df[_].astype(float)
+
         # merge/concat with the last df output df_output
         if len(df_output) != 0:
             df_output = pd.concat([df_output, df], sort=False)
