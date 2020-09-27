@@ -1,11 +1,11 @@
 import requests
 r = requests.get('https://tiki.vn/tivi/c5015?src=c.5015.hamburger_menu_fly_out_banner')
-print(r.text)
+# print(r.text)
 from bs4 import BeautifulSoup
 soup = BeautifulSoup(r.text, 'html.parser')
-print(soup.prettify()[:500])
+# print(soup.prettify()[:500])
 body_soup = soup.body
-print(body_soup.prettify())
+# print(body_soup.prettify())
 section_1_soup = body_soup.find('div', {'data-seller-product-id':'17465704'}) 
 print(section_1_soup['data-seller-product-id'])
 print(section_1_soup['data-brand'])
