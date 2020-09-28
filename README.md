@@ -9,7 +9,7 @@
 
 ## Extra Features:
 1. Extend an excel (.xlsx) file with crawled data of every page.
-2. Continue the page where the script left off. Crawling process can be interrupted due to random causes.
+2. Continue the page where the script left off.
 
 ## Files:
 1. data_columns.xlsx: Data need to crawl from Tiki webpage.
